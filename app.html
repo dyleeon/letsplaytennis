@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#1a1a1a">
+  <link rel="manifest" href="manifest.json">
+  <title>Let's Play Tennis</title>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #1a1a1a;
+      color: #fff;
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+
+    .screen { display: none; width: 100%; height: 100%; flex-direction: column; }
+    .screen.active { display: flex; }
+
+    /* ── SETUP ── */
+    #setup {
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      padding: 20px 16px;
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 10px;
+      width: 100%;
+      max-width: 340px;
+    }
+
+    .choice-btn {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      padding: 14px 8px;
+      background: rgba(255,255,255,0.08);
+      border: none;
+      border-radius: 14px;
+      color: #666;
+      font-size: 14px;
+      font-family: inherit;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+    .choice-btn .icon { font-size: 18px; }
+    .choice-btn.selected { color: #fff; font-weight: 700; }
+    .choice-btn.blue.selected  { background: rgba(50,120,255,0.7); }
+    .choice-btn.red.selected   { background: rgba(255,60,60,0.7); }
+    .choice-btn.purple.selected{ background: rgba(160,80,255,0.7); }
+    .choice-btn.green.selected { background: rgba(40,200,80,0.7); }
+    .choice-btn.orange.selected{ background: rgba(255,150,40,0.7); }
+
+    .start-btn {
+      width: 100%;
+      max-width: 340px;
+      padding: 15px;
+      background: #0a84ff;
+      border: none;
+      border-radius: 14px;
+      color: #fff;
+      font-size: 17px;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      margin-top: 6px;
+    }
+
+    /* ── GAME ── */
+    #game { position: relative; }
+
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 18px 6px;
+      flex-shrink: 0;
+      position: relative;
+    }
+
+
+    .set-dots {
+      display: flex;
+      gap: 8px;
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+    .dot-group { display: flex; gap: 5px; align-items: center; }
+    .dot {
+      width: 9px; height: 9px;
+      border-radius: 50%;
+      transition: background 0.2s;
+    }
+    .dot.me  { background: rgba(50,120,255,0.2); }
+    .dot.me.filled  { background: #3278ff; }
+    .dot.opp { background: rgba(255,60,60,0.2); }
+    .dot.opp.filled { background: #ff3c3c; }
+
+    /* Score columns */
+    .score-area {
+      flex: 1;
+      display: flex;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .score-col {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      cursor: pointer;
+      position: relative;
+      transition: background 0.25s ease-out;
+    }
+    .score-col.me  {
+      background: rgba(50,120,255,0.08);
+      border-right: 1px solid rgba(255,255,255,0.12);
+    }
+    .score-col.opp { background: rgba(255,60,60,0.08); }
+    .score-col.flash { transition: none; }
+    .score-col.me.flash  { background: rgba(50,120,255,0.3); }
+    .score-col.opp.flash { background: rgba(255,60,60,0.3); }
+
+    .col-bar {
+      width: 36%;
+      height: 3px;
+      border-radius: 2px;
+      margin-bottom: 2px;
+    }
+    .me  .col-bar { background: rgba(50,120,255,0.6); }
+    .opp .col-bar { background: rgba(255,60,60,0.6); }
+
+    .player-label {
+      font-size: 14px;
+      font-weight: 700;
+    }
+    .me  .player-label { color: #3278ff; }
+    .opp .player-label { color: #ff3c3c; }
+
+    .game-score {
+      font-size: 15px;
+      color: #666;
+    }
+
+    .point-score {
+      font-size: clamp(56px, 15vw, 80px);
+      font-weight: 800;
+      line-height: 1;
+    }
+    .me  .point-score { color: #3278ff; }
+    .opp .point-score { color: #ff3c3c; }
+
+    @keyframes pop {
+      0%   { transform: scale(1); }
+      45%  { transform: scale(1.3); }
+      100% { transform: scale(1); }
+    }
+    .point-score.pop { animation: pop 0.28s cubic-bezier(0.34,1.56,0.64,1); }
+
+    /* Undo button */
+    .undo-btn {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 42px; height: 42px;
+      background: #33ff66;
+      border: none;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 20px;
+      z-index: 10;
+      box-shadow: 0 2px 12px rgba(51,255,102,0.4);
+    }
+    .undo-btn.hidden { display: none; }
+
+    /* Bottom */
+    .bottom-area {
+      flex-shrink: 0;
+      padding: 6px 18px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .serve-row {
+      display: flex;
+      align-items: center;
+      height: 24px;
+      cursor: pointer;
+      padding: 0 4px;
+    }
+    .serve-row .spacer { flex: 1; }
+    .serve-ball {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .end-btn {
+      width: 100%;
+      padding: 10px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 22px;
+      color: #666;
+      font-size: 14px;
+      font-family: inherit;
+      cursor: pointer;
+    }
+
+    /* ── MATCH OVER ── */
+    #matchover {
+      justify-content: center;
+      align-items: center;
+      gap: 14px;
+      padding: 32px 24px;
+    }
+
+    .result-text {
+      font-size: 36px;
+      font-weight: 800;
+    }
+
+    .sets-result {
+      font-size: 15px;
+      color: #666;
+    }
+
+    .new-game-btn {
+      margin-top: 8px;
+      padding: 14px 40px;
+      background: #0a84ff;
+      border: none;
+      border-radius: 14px;
+      color: #fff;
+      font-size: 16px;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+    }
+  </style>
+  <meta name="google-adsense-account" content="ca-pub-3705505635834500">
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3705505635834500" crossorigin="anonymous"></script>
+</head>
+<body>
+
+<!-- ── Setup ── -->
+<div id="setup" class="screen active">
+  <div class="btn-row">
+    <button class="choice-btn blue selected" data-group="server" data-value="0" onclick="pick(this)">
+      <span class="icon">🎾</span>Me
+    </button>
+    <button class="choice-btn red" data-group="server" data-value="1" onclick="pick(this)">
+      <span class="icon">🎾</span>Opp
+    </button>
+  </div>
+
+  <div class="btn-row">
+    <button class="choice-btn purple" data-group="sets" data-value="1" onclick="pick(this)">1</button>
+    <button class="choice-btn purple selected" data-group="sets" data-value="3" onclick="pick(this)">3</button>
+    <button class="choice-btn purple" data-group="sets" data-value="5" onclick="pick(this)">5</button>
+  </div>
+
+  <div class="btn-row">
+    <button class="choice-btn green selected" data-group="adv" data-value="1" onclick="pick(this)">
+      <span class="icon">✓</span>Adv
+    </button>
+    <button class="choice-btn orange" data-group="adv" data-value="0" onclick="pick(this)">
+      <span class="icon">✗</span>Adv
+    </button>
+  </div>
+
+  <button class="start-btn" onclick="startGame()">Play Now</button>
+</div>
+
+<!-- ── Game ── -->
+<div id="game" class="screen">
+  <div class="top-bar">
+    <div id="set-dots" class="set-dots"></div>
+  </div>
+
+  <div class="score-area">
+    <div class="score-col me" id="col-me" onclick="scorePoint(0)">
+      <div class="col-bar"></div>
+      <div class="player-label">Me</div>
+      <div class="game-score" id="me-games">0</div>
+      <div class="point-score" id="me-pts">0</div>
+    </div>
+    <div class="score-col opp" id="col-opp" onclick="scorePoint(1)">
+      <div class="col-bar"></div>
+      <div class="player-label">Opp</div>
+      <div class="game-score" id="opp-games">0</div>
+      <div class="point-score" id="opp-pts">0</div>
+    </div>
+    <button class="undo-btn hidden" id="undo-btn" onclick="undo()">↺</button>
+  </div>
+
+  <div class="bottom-area">
+    <div class="serve-row" id="serve-row" onclick="toggleServer()">
+      <div class="serve-ball" id="serve-ball"></div>
+      <span class="spacer"></span>
+    </div>
+    <button class="end-btn" onclick="endGame()">End Game</button>
+  </div>
+</div>
+
+<!-- ── Match Over ── -->
+<div id="matchover" class="screen">
+  <div class="result-text" id="result-text"></div>
+  <div class="sets-result" id="sets-result"></div>
+  <button class="new-game-btn" onclick="showScreen('setup')">New Game</button>
+</div>
+
+<script>
+  // ── State ──
+  let S = {};
+  const PT = ['0','15','30','40'];
+
+  function setsToWin() { return Math.ceil(S.totalSets / 2); }
+
+  // ── Setup ──
+  function pick(btn) {
+    document.querySelectorAll(`[data-group="${btn.dataset.group}"]`)
+      .forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+  }
+
+  function startGame() {
+    const server = +document.querySelector('[data-group="server"].selected').dataset.value;
+    const sets   = +document.querySelector('[data-group="sets"].selected').dataset.value;
+    const adv    =  document.querySelector('[data-group="adv"].selected').dataset.value === '1';
+
+    S = {
+      points: [0, 0], games: [0, 0], sets: [0, 0],
+      advantage: null, pointsPlayed: 0,
+      currentServer: server, useAdvantage: adv, totalSets: sets,
+      history: []
+    };
+    render();
+    showScreen('game');
+  }
+
+  // ── Undo ──
+  function snapshot() {
+    S.history.push({
+      points: [...S.points], games: [...S.games], sets: [...S.sets],
+      advantage: S.advantage, pointsPlayed: S.pointsPlayed,
+      currentServer: S.currentServer
+    });
+    if (S.history.length > 10) S.history.shift();
+  }
+
+  function undo() {
+    if (!S.history.length) return;
+    const h = S.history.pop();
+    Object.assign(S, h);
+    S.points = [...h.points];
+    S.games  = [...h.games];
+    S.sets   = [...h.sets];
+    render();
+  }
+
+  // ── Scoring ──
+  function scorePoint(player) {
+    snapshot();
+    S.pointsPlayed++;
+    const deuce = S.points[0] >= 3 && S.points[1] >= 3;
+
+    if (deuce) {
+      if (S.useAdvantage) {
+        if (S.advantage === player)     winGame(player);
+        else if (S.advantage !== null)  S.advantage = null;
+        else                            S.advantage = player;
+      } else {
+        winGame(player);
+      }
+    } else {
+      S.points[player]++;
+      if (S.points[player] >= 4) winGame(player);
+    }
+
+    animate(player);
+    render();
+  }
+
+  function winGame(player) {
+    S.points = [0, 0];
+    S.advantage = null;
+    S.pointsPlayed = 0;
+    S.currentServer = 1 - S.currentServer;
+    S.games[player]++;
+    const [g0, g1] = S.games;
+    if ((g0 >= 6 && g0 - g1 >= 2) || g0 === 7) winSet(0);
+    else if ((g1 >= 6 && g1 - g0 >= 2) || g1 === 7) winSet(1);
+  }
+
+  function winSet(player) {
+    S.games = [0, 0];
+    S.sets[player]++;
+    if (S.sets[player] >= setsToWin()) {
+      setTimeout(() => showMatchOver(player), 300);
+    }
+  }
+
+  function ptLabel(p) {
+    const deuce = S.points[0] >= 3 && S.points[1] >= 3;
+    if (deuce) return '40';
+    if (S.advantage !== null) return S.advantage === p ? 'AD' : '40';
+    return PT[S.points[p]] ?? '40';
+  }
+
+  function toggleServer() {
+    S.currentServer = 1 - S.currentServer;
+    render();
+  }
+
+  function endGame() { clearState(); showScreen('setup'); }
+
+  // ── Render ──
+  function render() {
+    saveState();
+    document.getElementById('me-pts').textContent   = ptLabel(0);
+    document.getElementById('opp-pts').textContent  = ptLabel(1);
+    document.getElementById('me-games').textContent  = S.games[0];
+    document.getElementById('opp-games').textContent = S.games[1];
+
+    // Set dots
+    const dotsEl = document.getElementById('set-dots');
+    if (S.totalSets > 1) {
+      const w = setsToWin();
+      let h = '<div class="dot-group">';
+      for (let i = 0; i < w; i++) h += `<div class="dot me ${i < S.sets[0] ? 'filled' : ''}"></div>`;
+      h += '</div><div class="dot-group">';
+      for (let i = 0; i < w; i++) h += `<div class="dot opp ${i < S.sets[1] ? 'filled' : ''}"></div>`;
+      h += '</div>';
+      dotsEl.innerHTML = h;
+      dotsEl.style.display = 'flex';
+    } else {
+      dotsEl.style.display = 'none';
+    }
+
+    // Serve indicator
+    const isAdSide = S.pointsPlayed % 2 === 1;
+    const row  = document.getElementById('serve-row');
+    const ball = document.getElementById('serve-ball');
+    const spacer = row.querySelector('.spacer');
+    ball.style.background = S.currentServer === 0 ? '#3278ff' : '#ff3c3c';
+    if (isAdSide) {
+      row.insertBefore(ball, row.firstChild);
+      row.appendChild(spacer);
+    } else {
+      row.insertBefore(spacer, row.firstChild);
+      row.appendChild(ball);
+    }
+
+    // Undo button
+    document.getElementById('undo-btn').classList.toggle('hidden', S.history.length === 0);
+  }
+
+  function animate(player) {
+    const pts = document.getElementById(player === 0 ? 'me-pts' : 'opp-pts');
+    const col = document.getElementById(player === 0 ? 'col-me' : 'col-opp');
+    pts.classList.remove('pop');
+    void pts.offsetWidth;
+    pts.classList.add('pop');
+    col.classList.add('flash');
+    setTimeout(() => col.classList.remove('flash'), 280);
+  }
+
+  // ── Match over ──
+  function showMatchOver(winner) {
+    clearState();
+    document.getElementById('result-text').textContent = winner === 0 ? 'You Win! 🎉' : 'You Lose';
+    document.getElementById('result-text').style.color = winner === 0 ? '#3278ff' : '#ff3c3c';
+    document.getElementById('sets-result').textContent =
+      S.totalSets > 1 ? `Sets  ${S.sets[0]} : ${S.sets[1]}` : '';
+    showScreen('matchover');
+  }
+
+  function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+  }
+
+  // ── localStorage 저장/복원 ──
+  function saveState() {
+    try {
+      localStorage.setItem('letsplaytennis_state', JSON.stringify(S));
+    } catch(e) {}
+  }
+
+  function loadState() {
+    try {
+      const raw = localStorage.getItem('letsplaytennis_state');
+      if (!raw) return;
+      const saved = JSON.parse(raw);
+      // 게임 진행 중이었으면 복원
+      if (saved && saved.points && saved.totalSets) {
+        S = saved;
+        render();
+        showScreen('game');
+      }
+    } catch(e) {}
+  }
+
+  function clearState() {
+    try { localStorage.removeItem('letsplaytennis_state'); } catch(e) {}
+  }
+
+  // ── PWA ──
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js');
+  }
+
+  // 앱 시작 시 이전 데이터 복원
+  loadState();
+</script>
+</body>
+</html>

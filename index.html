@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Let's Play Tennis — A simple, intuitive tennis score tracker for your wrist and phone. Track points, games, sets, and serve position in real time.">
+  <meta name="theme-color" content="#0d0d0d">
+  <link rel="manifest" href="manifest.json">
+  <title>Let's Play Tennis — Simple Tennis Tracker</title>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --blue: #3278ff;
+      --red:  #ff3c3c;
+      --bg:   #0d0d0d;
+      --card: #161616;
+      --border: rgba(255,255,255,0.07);
+      --text: #f0f0f0;
+      --muted: #666;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    a { color: inherit; text-decoration: none; }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 32px;
+      background: rgba(13,13,13,0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 17px;
+      font-weight: 700;
+    }
+
+    .logo-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: var(--blue);
+    }
+
+    .nav-cta {
+      padding: 8px 20px;
+      background: var(--blue);
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: 600;
+      transition: opacity 0.15s;
+    }
+    .nav-cta:hover { opacity: 0.85; }
+
+    /* ── HERO ── */
+    .hero {
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 100px 24px 60px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -200px; left: 50%;
+      transform: translateX(-50%);
+      width: 600px; height: 600px;
+      background: radial-gradient(circle, rgba(50,120,255,0.12) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      background: rgba(50,120,255,0.12);
+      border: 1px solid rgba(50,120,255,0.25);
+      border-radius: 20px;
+      font-size: 13px;
+      color: var(--blue);
+      margin-bottom: 28px;
+      font-weight: 500;
+    }
+
+    h1 {
+      font-size: clamp(38px, 8vw, 72px);
+      font-weight: 800;
+      line-height: 1.1;
+      letter-spacing: -1.5px;
+      margin-bottom: 20px;
+      max-width: 700px;
+    }
+
+    h1 span {
+      background: linear-gradient(135deg, var(--blue), #7eb3ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-sub {
+      font-size: clamp(16px, 2.5vw, 20px);
+      color: var(--muted);
+      max-width: 480px;
+      margin-bottom: 40px;
+    }
+
+    .hero-btns {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .btn-primary {
+      padding: 14px 32px;
+      background: var(--blue);
+      border-radius: 14px;
+      font-size: 16px;
+      font-weight: 700;
+      transition: transform 0.15s, opacity 0.15s;
+    }
+    .btn-primary:hover { transform: translateY(-1px); opacity: 0.9; }
+
+    .btn-secondary {
+      padding: 14px 32px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      font-size: 16px;
+      font-weight: 600;
+      color: #aaa;
+      transition: background 0.15s;
+    }
+    .btn-secondary:hover { background: rgba(255,255,255,0.1); }
+
+    /* ── MOCKUP ── */
+    .mockup-wrap {
+      margin-top: 60px;
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      align-items: flex-end;
+    }
+
+    .mockup-phone {
+      width: 200px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 28px;
+      overflow: hidden;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+    }
+
+    .mockup-screen {
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .m-topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 14px 6px;
+      font-size: 10px;
+    }
+    .m-dots { display: flex; gap: 4px; }
+    .m-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+    }
+
+    .m-scores {
+      display: flex;
+      border-top: 1px solid var(--border);
+    }
+    .m-col {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 14px 0;
+      gap: 2px;
+    }
+    .m-col.m-me  { background: rgba(50,120,255,0.08); border-right: 1px solid var(--border); }
+    .m-col.m-opp { background: rgba(255,60,60,0.08); }
+    .m-col-bar { width: 30%; height: 2px; border-radius: 1px; margin-bottom: 2px; }
+    .m-me  .m-col-bar { background: rgba(50,120,255,0.6); }
+    .m-opp .m-col-bar { background: rgba(255,60,60,0.6); }
+    .m-label { font-size: 9px; font-weight: 700; }
+    .m-me  .m-label { color: #3278ff; }
+    .m-opp .m-label { color: #ff3c3c; }
+    .m-game  { font-size: 10px; color: #555; }
+    .m-point { font-size: 28px; font-weight: 800; line-height: 1; }
+    .m-me  .m-point { color: #3278ff; }
+    .m-opp .m-point { color: #ff3c3c; }
+
+    .m-bottom {
+      padding: 8px 14px 12px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .m-serve { display: flex; justify-content: flex-end; }
+    .m-ball  {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: #3278ff;
+    }
+    .m-endbtn {
+      background: rgba(255,255,255,0.06);
+      border-radius: 12px;
+      text-align: center;
+      padding: 5px;
+      font-size: 9px;
+      color: #555;
+    }
+
+    /* ── SECTION COMMON ── */
+    section {
+      padding: 100px 24px;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    .section-label {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--blue);
+      margin-bottom: 14px;
+    }
+
+    .section-title {
+      font-size: clamp(26px, 4vw, 40px);
+      font-weight: 800;
+      letter-spacing: -0.8px;
+      margin-bottom: 14px;
+    }
+
+    .section-sub {
+      color: var(--muted);
+      font-size: 16px;
+      max-width: 500px;
+      margin-bottom: 48px;
+    }
+
+    /* ── FEATURES ── */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px;
+    }
+
+    .feature-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 28px;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+    .feature-card:hover {
+      border-color: rgba(50,120,255,0.3);
+      transform: translateY(-2px);
+    }
+
+    .feature-icon {
+      font-size: 28px;
+      margin-bottom: 14px;
+    }
+
+    .feature-title {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .feature-desc {
+      font-size: 14px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    /* ── HOW IT WORKS ── */
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      counter-reset: steps;
+    }
+
+    .step {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 28px;
+      counter-increment: steps;
+      position: relative;
+    }
+
+    .step-num {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--blue);
+      letter-spacing: 1px;
+      margin-bottom: 12px;
+    }
+
+    .step-title {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .step-desc {
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    /* ── CTA BANNER ── */
+    .cta-banner {
+      margin: 0 24px 100px;
+      max-width: 952px;
+      margin-left: auto;
+      margin-right: auto;
+      background: linear-gradient(135deg, rgba(50,120,255,0.15), rgba(50,120,255,0.05));
+      border: 1px solid rgba(50,120,255,0.2);
+      border-radius: 24px;
+      padding: 56px 40px;
+      text-align: center;
+    }
+
+    .cta-banner h2 {
+      font-size: clamp(24px, 4vw, 36px);
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      margin-bottom: 12px;
+    }
+
+    .cta-banner p {
+      color: var(--muted);
+      font-size: 16px;
+      margin-bottom: 32px;
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 32px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      max-width: 1000px;
+      margin: 0 auto;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    footer a { transition: color 0.15s; }
+    footer a:hover { color: var(--text); }
+
+    .footer-links { display: flex; gap: 20px; }
+
+    @media (max-width: 600px) {
+      nav { padding: 16px 20px; }
+      .hero { padding: 90px 20px 50px; }
+      section { padding: 70px 20px; }
+      .cta-banner { padding: 40px 24px; margin: 0 16px 70px; }
+      footer { justify-content: center; text-align: center; }
+    }
+  </style>
+  <meta name="google-adsense-account" content="ca-pub-3705505635834500">
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3705505635834500" crossorigin="anonymous"></script>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">
+    <div class="logo-dot"></div>
+    Let's Play Tennis
+  </div>
+  <a class="nav-cta" href="app.html">Play Now →</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-badge">🎾 Free &amp; No Install Required</div>
+  <h1>Track Every Point,<br><span>Game &amp; Set.</span></h1>
+  <p class="hero-sub">A clean, distraction-free tennis score tracker. Works on any phone — no app store needed.</p>
+  <div class="hero-btns">
+    <a class="btn-primary" href="app.html">Play Now →</a>
+    <a class="btn-secondary" href="#features">See Features</a>
+  </div>
+
+  <!-- Mockup -->
+  <div class="mockup-wrap">
+    <div class="mockup-phone">
+      <div class="mockup-screen">
+        <div class="m-topbar">
+          <div class="m-dots">
+            <div class="m-dot" style="background:#3278ff"></div>
+            <div class="m-dot" style="background:rgba(50,120,255,0.2)"></div>
+            <div class="m-dot" style="background:rgba(255,60,60,0.2)"></div>
+            <div class="m-dot" style="background:rgba(255,60,60,0.2)"></div>
+          </div>
+        </div>
+        <div class="m-scores">
+          <div class="m-col m-me">
+            <div class="m-col-bar"></div>
+            <div class="m-label">Me</div>
+            <div class="m-game">3</div>
+            <div class="m-point">40</div>
+          </div>
+          <div class="m-col m-opp">
+            <div class="m-col-bar"></div>
+            <div class="m-label">Opp</div>
+            <div class="m-game">2</div>
+            <div class="m-point">15</div>
+          </div>
+        </div>
+        <div class="m-bottom">
+          <div class="m-serve"><div class="m-ball"></div></div>
+          <div class="m-endbtn">End Game</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section id="features">
+  <div class="section-label">Features</div>
+  <h2 class="section-title">Everything you need<br>on the court.</h2>
+  <p class="section-sub">Designed to be used with one hand, mid-match, without looking twice.</p>
+
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon">🎯</div>
+      <div class="feature-title">Full Scoring System</div>
+      <div class="feature-desc">Points, games, and sets — all tracked automatically with deuce and advantage rules.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🔵</div>
+      <div class="feature-title">Serve Position Indicator</div>
+      <div class="feature-desc">Always know which side to serve from. Deuce or ad side — updated after every point.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">↺</div>
+      <div class="feature-title">Undo Last Point</div>
+      <div class="feature-desc">Tapped the wrong side? Undo up to 10 previous points instantly.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">💾</div>
+      <div class="feature-title">Auto Save</div>
+      <div class="feature-desc">Your score is saved automatically. Come back after a break and pick up right where you left off.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">⚙️</div>
+      <div class="feature-title">Flexible Match Setup</div>
+      <div class="feature-desc">Choose 1, 3, or 5 sets. Toggle advantage rules on or off before each match.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">📱</div>
+      <div class="feature-title">No Install Needed</div>
+      <div class="feature-desc">Works in any mobile browser. Add to your home screen for a full-screen app experience.</div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section id="how">
+  <div class="section-label">How It Works</div>
+  <h2 class="section-title">Ready in seconds.</h2>
+  <p class="section-sub">Three taps and you're scoring.</p>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">STEP 01</div>
+      <div class="step-title">Set Up Your Match</div>
+      <div class="step-desc">Choose who serves first, how many sets, and whether to use advantage rules.</div>
+    </div>
+    <div class="step">
+      <div class="step-num">STEP 02</div>
+      <div class="step-title">Tap to Score</div>
+      <div class="step-desc">Tap the left side for your point, right side for your opponent's. It's that simple.</div>
+    </div>
+    <div class="step">
+      <div class="step-num">STEP 03</div>
+      <div class="step-title">Track &amp; Win</div>
+      <div class="step-desc">Watch your score update in real time. Serve position and set dots keep you oriented.</div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA BANNER -->
+<div class="cta-banner">
+  <h2>Ready to play?</h2>
+  <p>No sign-up. No download. Just open and score.</p>
+  <a class="btn-primary" href="app.html">Play Now →</a>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div>© 2026 Let's Play Tennis</div>
+  <div class="footer-links">
+    <a href="privacy.html">Privacy Policy</a>
+    <a href="app.html">Play Now</a>
+  </div>
+</footer>
+
+</body>
+</html>
