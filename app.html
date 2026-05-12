@@ -337,6 +337,15 @@
 </div>
 
 <script>
+  // ── 진입 체크: 랜딩 페이지 경유 또는 진행 중인 게임 없으면 리다이렉트 ──
+  (function() {
+    const fromLanding  = sessionStorage.getItem('fromLanding');
+    const savedGame    = localStorage.getItem('letsplaytennis_state');
+    if (!fromLanding && !savedGame) {
+      window.location.replace('./index.html');
+    }
+  })();
+
   // ── State ──
   let S = {};
   const PT = ['0','15','30','40'];
