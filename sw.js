@@ -1,4 +1,4 @@
-const CACHE = 'letsplaytennis-v2';
+const CACHE = 'letsplaytennis-v3';
 const FILES = ['./index.html', './app.html', './privacy.html', './manifest.json'];
 
 self.addEventListener('install', e => {
