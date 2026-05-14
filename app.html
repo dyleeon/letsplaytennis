@@ -500,9 +500,9 @@
   }
 
   function ptLabel(p) {
+    if (S.advantage !== null) return S.advantage === p ? 'AD' : '40';
     const deuce = S.points[0] >= 3 && S.points[1] >= 3;
     if (deuce) return '40';
-    if (S.advantage !== null) return S.advantage === p ? 'AD' : '40';
     return PT[S.points[p]] ?? '40';
   }
 
